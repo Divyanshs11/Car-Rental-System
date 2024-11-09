@@ -1,0 +1,306 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
+
+class Car {
+    private String carId;
+    private String brand;
+    private String model;
+    private double pricePerDay;
+    private boolean status; // true if available, false if rented
+
+    public Car(String carId, String brand, String model, double pricePerDay) {
+        this.carId = carId;
+        this.brand = brand;
+        this.model = model;
+        this.pricePerDay = pricePerDay;
+        this.status = true; // Initially available
+    }
+
+    public String getCarId() {
+        return carId;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public double calculatePrice(int rentalDays) {
+        return pricePerDay * rentalDays;
+    }
+
+    public boolean isAvailable() {
+        return status;
+    }
+
+    public void rent() {
+        status = false; // Mark as rented
+    }
+
+    public void returnCar() {
+        status = true; // Mark as available
+    }
+}
+
+class Customer {
+    private String customerId;
+    private String name;
+
+    public Customer(String customerId, String name) {
+        this.customerId = customerId;
+        this.name = name;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+
+class Rental {
+    private Car car;
+    private Customer customer;
+    private int days;
+
+    public Rental(Car car, Customer customer, int days) {
+        this.car = car;
+        this.customer = customer;
+        this.days = days;
+    }
+
+    public Car getCar() {
+        return car;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public int getDays() {
+        return days;
+    }
+}
+
+class Management {
+    private List<Car> cars;
+    private List<Customer> customers;
+    private List<Rental> rentals;
+
+    public Management() {
+        cars = new ArrayList<>();
+        customers = new ArrayList<>();
+        rentals = new ArrayList<>();
+    }
+
+    public void addCar(Car car) {
+        cars.add(car);
+    }
+
+    public void addCustomer(String customerId, String name) {
+        customers.add(new Customer(customerId, name));
+    }
+
+    public List<Car> getAvailableCars() {
+        List<Car> availableCars = new ArrayList<>();
+        for (Car car : cars) {
+            if (car.isAvailable()) {
+                availableCars.add(car);
+            }
+        }
+        return availableCars;
+    }
+
+    public void rentCar(Car car, Customer customer, int days) {
+        if (car.isAvailable()) {
+            car.rent();
+            rentals.add(new Rental(car, customer, days));
+        } else {
+            JOptionPane.showMessageDialog(null, "Car is not available for rent.");
+        }
+    }
+
+    public boolean returnCar(String carId) {
+        for (Rental rental : rentals) {
+            if (rental.getCar().getCarId().equals(carId)) {
+                rental.getCar().returnCar(); // Mark the car as available
+                rentals.remove(rental); // Remove the rental record
+                return true; // Successfully returned
+            }
+        }
+        return false; // Car was not rented
+    }
+
+    public void showRentalInformation(Customer customer, Car car, int rentalDays) {
+        double totalPrice = car.calculatePrice(rentalDays);
+        String message = "== Rental Information ==\n" +
+                "Customer ID: " + customer.getCustomerId() + "\n" +
+                "Customer Name: " + customer.getName() + "\n" +
+                "Car: " + car.getBrand() + " " + car.getModel() + "\n" +
+                "Rental Days: " + rentalDays + "\n" +
+                "Total Price: ₹" + totalPrice + "\n";
+        JOptionPane.showMessageDialog(null, message);
+    }
+
+    public void showRentals() {
+        StringBuilder rentalList = new StringBuilder("== Current Rentals ==\n");
+        for (Rental rental : rentals) {
+            rentalList.append("Car ID: ").append(rental.getCar().getCarId())
+                    .append(", Brand: ").append(rental.getCar().getBrand())
+                    .append(", Model: ").append(rental.getCar().getModel())
+                    .append(", Rented by: ").append(rental.getCustomer().getName())
+                    .append(", Days: ").append(rental.getDays()).append("\n");
+        }
+        if (rentals.isEmpty()) {
+            rentalList.append("No current rentals.");
+        }
+        JOptionPane.showMessageDialog(null, rentalList.toString());
+    }
+
+    public void collectFeedback(String customerId, String carId, int rating) {
+        String feedbackMessage = "Customer ID: " + customerId + "\nCar ID: " + carId + "\nRating: " + rating;
+        JOptionPane.showMessageDialog(null, "Thank you for your feedback!\n" + feedbackMessage);
+    }
+}
+
+public class CarRentalApp {
+    public static void main(String[] args) {
+        Management rentalSystem = new Management();
+        rentalSystem.addCar(new Car("C001", "Maruti Suzuki", "Swift", 60.0));
+        rentalSystem.addCar(new Car("C002", "Tata", "Harrier", 70.0));
+        rentalSystem.addCar(new Car("C003", "Mahindra", "Thar", 150.0));
+        rentalSystem.addCar(new Car("C004", "Honda", "City", 130.0));
+        rentalSystem.addCar(new Car("C005", "Toyota", "Innova", 160.0));
+        rentalSystem.addCar(new Car("C006", "Hyundai", "Creta", 90.0));
+
+        JFrame frame = new JFrame("Car Rental System");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(500, 300);
+        frame.setLayout(new FlowLayout());
+
+        JButton rentButton = new JButton("Rent a Car");
+        JButton returnButton = new JButton("Return a Car");
+        JButton viewRentalsButton = new JButton("View Current Rentals");
+
+        frame.add(rentButton);
+        frame.add(returnButton);
+        frame.add(viewRentalsButton);
+
+        rentButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String customerName = JOptionPane.showInputDialog("Enter your name:");
+                if (customerName != null && !customerName.trim().isEmpty()) {
+                    StringBuilder carList = new StringBuilder("Available Cars:\n");
+                    for (Car car : rentalSystem.getAvailableCars()) {
+                        carList.append(car.getCarId()).append(" - ").append(car.getBrand()).append(" ").append(car.getModel()).append("\n");
+                    }
+
+                    String carId = JOptionPane.showInputDialog(carList + "\nEnter the car ID you want to rent:");
+                    if (carId != null && !carId.trim().isEmpty()) {
+                        int rentalDays = 0;
+                        boolean validDays = false;
+
+                        while (!validDays) {
+                            String daysInput = JOptionPane.showInputDialog("Enter the number of days for rental:");
+                            if (daysInput != null) {
+                                try {
+                                    rentalDays = Integer.parseInt(daysInput);
+                                    if (rentalDays > 0) {
+                                        validDays = true;
+                                    } else {
+                                        JOptionPane.showMessageDialog(frame, "Please enter a positive number for days.");
+                                    }
+                                } catch (NumberFormatException ex) {
+                                    JOptionPane.showMessageDialog(frame, "Invalid input. Please enter a number.");
+                                }
+                            } else {
+                                return; // Cancelled
+                            }
+                        }
+
+                        String customerId = "CUS" + (rentalSystem.getAvailableCars().size() + 1);
+                        rentalSystem.addCustomer(customerId, customerName);
+
+                        Car selectedCar = null;
+                        for (Car car : rentalSystem.getAvailableCars()) {
+                            if (car.getCarId().equals(carId)) {
+                                selectedCar = car;
+                                break;
+                            }
+                        }
+
+                        if (selectedCar != null) {
+                            rentalSystem.showRentalInformation(new Customer(customerId, customerName), selectedCar, rentalDays);
+
+                            // Confirmation dialog after showing rental information
+                            int confirmation = JOptionPane.showConfirmDialog(frame, "Do you want to proceed with the rental?",
+                                    "Confirm Rental", JOptionPane.YES_NO_OPTION);
+
+                            if (confirmation == JOptionPane.YES_OPTION) {
+                                rentalSystem.rentCar(selectedCar, new Customer(customerId, customerName), rentalDays);
+                                JOptionPane.showMessageDialog(frame, "Car rented successfully.");
+                            } else {
+                                JOptionPane.showMessageDialog(frame, "Rental canceled.");
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(frame, "Invalid car selection or car not available for rent.");
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Customer name cannot be empty.");
+                }
+            }
+        });
+
+        returnButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String carId = JOptionPane.showInputDialog("Enter the car ID you want to return:");
+                if (carId != null && !carId.trim().isEmpty()) {
+                    boolean returned = rentalSystem.returnCar(carId);
+                    if (returned) {
+                        JOptionPane.showMessageDialog(frame, "Car returned successfully.");
+
+                        // Collect feedback
+                        String feedbackInput = JOptionPane.showInputDialog("Please provide a rating (1-5):");
+                        if (feedbackInput != null) {
+                            try {
+                                int rating = Integer.parseInt(feedbackInput);
+                                if (rating >= 1 && rating <= 5) {
+                                    rentalSystem.collectFeedback("N/A", carId, rating); // Customer ID not tracked for simplicity
+                                } else {
+                                    JOptionPane.showMessageDialog(frame, "Rating must be between 1 and 5.");
+                                }
+                            } catch (NumberFormatException ex) {
+                                JOptionPane.showMessageDialog(frame, "Invalid rating. Please enter a number between 1 and 5.");
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "No rental found for this car ID or car is not rented.");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Car ID cannot be empty.");
+                }
+            }
+        });
+
+        viewRentalsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                rentalSystem.showRentals();
+            }
+        });
+
+        frame.setVisible(true);
+    }
+}
